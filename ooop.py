@@ -33,7 +33,7 @@ except:
 
 __author__ = "Pedro Gracia <lasarux@neuroomante.com>"
 __license__ = "GPLv3+"
-__version__ = "0.2.2-xt"
+__version__ = "0.3.0"
 
 
 OOOPMODELS = 'ir.model'
