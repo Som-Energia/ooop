@@ -16,13 +16,13 @@ version = re.search('__version__ = "([^"]+)"',
                     open('ooop.py').read()).group(1)
 
 setup(
-    name = 'ooop',
+    name = 'gisce-ooop',
     version = version,
     description = 'OpenObject on Python, a library to connect with Open ERP.',
     author = 'Pedro Gracia',
     author_email = 'lasarux@neuroomante.com',
     license = 'GPLv3+',
-    download_url = 'https://www.github.com/lasarux/ooop',
+    download_url = 'https://www.github.com/gisce/gisce-ooop',
     py_modules = ['ooop'],
     #package_dir = {'ooop': 'src/'},
     #packages = ['ooop'],
