@@ -26,6 +26,9 @@ setup(
     py_modules = ['ooop'],
     #package_dir = {'ooop': 'src/'},
     #packages = ['ooop'],
+    install_requires = [
+        'futurize',
+    ],
     classifiers = [
         'Development Status :: 4 - Beta',
         'Intended Audience :: Developers',

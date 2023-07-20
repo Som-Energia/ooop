@@ -20,7 +20,13 @@
 #
 ########################################################################
 
-import xmlrpclib
+from __future__ import print_function
+from builtins import range
+from builtins import object
+try:
+    import xmlrpclib
+except ImportError:
+    from xmlrpc import client as xmlrpclib
 import time
 import base64
 import types
@@ -33,7 +39,7 @@ except:
 
 __author__ = "Pedro Gracia <lasarux@neuroomante.com>"
 __license__ = "GPLv3+"
-__version__ = "0.3.0"
+__version__ = "0.3.1"
 
 
 OOOPMODELS = 'ir.model'
@@ -55,7 +61,7 @@ OPERATORS = {
     'child_of': 'child of',
 }
 
-class objectsock_mock():
+class objectsock_mock(object):
     """mock for objectsock to be able to use the OOOP as a module inside of openerp"""
     def __init__(self, pool, cr):
         self.pool = pool
@@ -69,7 +75,7 @@ class objectsock_mock():
         return res
         
 
-class OOOP:
+class OOOP(object):
     """ Main class to manage xml-rpc comunitacion with openerp-server """
     def __init__(self, user='admin', pwd='admin', dbname='openerp', 
                  uri='http://localhost', port=8069, debug=False, **kwargs):
@@ -181,7 +187,7 @@ class OOOP:
             if not self.search(model, query): # check if it's already present
                 self.create(model, d)
             else:
-                print 'Warning: %s already in %s model: %s' % (item, model)
+                print('Warning: %s already in %s model: %s' % (item, model))
 
     def load_models(self):
         models = self.read_all(OOOPMODELS)
@@ -191,7 +197,7 @@ class OOOP:
 
     def set_model(self, model, r={}, deep=None):
         """docstring for set_model"""
-        if not model in r.keys():
+        if model not in r:
             r[model] = {
                 'name': self.normalize_model_name(model), 
                 'links': {}, 
@@ -201,7 +207,7 @@ class OOOP:
             for fld in flds:
                 r[model]['fields'].append((fld["name"], fld["ttype"]))
                 if fld["ttype"] in ('one2many', 'many2one', 'many2many'):
-                    if deep > 0 and not fld['relation'] in r[model]['links'].keys():
+                    if deep > 0 and not fld['relation'] in r[model]['links']:
                         r[model]['links'][fld['relation']] = fld['ttype']
                         r = self.set_model(fld["relation"], r, deep-1)
             
@@ -265,7 +271,7 @@ class OOOP:
             node = pydot.Node(value['name'], label=label)
             node.set_shape('none')
             graph.add_node(node)
-            for i in value['links'].keys():
+            for i in value['links']:
                 edge = pydot.Edge(value['name'], r[i]['name'])
                 if value['links'][i] == 'one2many':
                     edge.set_headlabel('0..*')
@@ -309,7 +315,7 @@ class OOOP:
                 time.sleep(1)
             attempt += 1
             if attempt > 200:
-                print 'Printing aborted, too long delay!'
+                print('Printing aborted, too long delay!')
                 break
         
         if report_type == 'pdf':
@@ -319,7 +325,7 @@ class OOOP:
             return report['result']
 
 # reference: http://www.java2s.com/Code/Python/Class/MyListinitaddmulgetitemlengetslice.htm
-class List:
+class List(object):
     """ An 'intelligent' list """
     #FIXME: reorder args
     def __init__(self, manager, objects=None, parent=None, 
@@ -342,7 +348,7 @@ class List:
     def __iter__(self):
         return self
  
-    def next(self):
+    def __next__(self):
         self.index += 1
         if self.index == len(self.objects):
             self.index = -1
@@ -350,11 +356,11 @@ class List:
         return self.__getitem__(self.index)
         
     def delete(self):
-        print self.parent
+        print(self.parent)
         if self.parent:
             objects = self.parent.objects
             self.parent.objects = objects[:self.low] + objects[self.high:]
-        print self.objects
+        print(self.objects)
         # print "hi"
         # return True
         return self.manager._ooop.unlink(self.model, self.objects)
@@ -368,7 +374,7 @@ class List:
         return List(self.manager, self.objects[low:high], self, low, high, data=self.data, model=self.model)
 
     def __getitem__(self, offset):
-        if type(self.objects[offset]) != types.IntType:
+        if type(self.objects[offset]) != int:
             return self.objects[offset]
         else:
             #if type(data) != Types.StringType: # data != model
@@ -383,7 +389,7 @@ class List:
         return '<Objects from %s> %i elements' % (self.model, len(self.objects))
 
 
-class Manager:
+class Manager(object):
     def __init__(self, model, ooop):
         self._model = model
         self._ooop = ooop
@@ -449,7 +455,7 @@ class Data(object):
         
         self.INSTANCES['%s:%s' % (self._model, self._ref)] = self
         
-        if self._model in self._ooop.fields.keys():
+        if self._model in self._ooop.fields:
             self.fields = self._ooop.fields[self._model]
         else:
             fields = self._manager.fields_get()
@@ -468,22 +474,21 @@ class Data(object):
         else:
             # get default values
             default_values = {}
-            field_names = self.fields.keys()
+            field_names = list(self.fields.keys())
             default_values = self._manager.default_get(field_names)
             self.init_values(**default_values)
 
     def init_values(self, *args, **kargs):
         """ initial values for object """
-        keys = kargs.keys()
         for i in self.fields.values():
             name,ttype,relation = i['name'],i['ttype'],i['relation']
             if ttype in ('one2many', 'many2many'): # these types use a list of objects
-                if name in keys:
+                if name in kargs:
                     self.__dict__[name] = List(Manager(relation, self._ooop), kargs[name], data=self, model=relation)
                 else:
                     self.__dict__[name] = List(Manager(relation, self._ooop), data=self, model=relation)
             elif ttype == 'many2one':
-                if name in keys:
+                if name in kargs:
                     # manager, ref=None, model=None, copy=False
                     instance = Data(Manager(relation, self._ooop), kargs[name], relation)
                     self.INSTANCES['%s:%s' % (relation, kargs[name])] = instance
@@ -491,7 +496,7 @@ class Data(object):
                 else:
                     self.__dict__[name] = False
             else:
-                if name in keys:
+                if name in kargs:
                     self.__dict__[name] = kargs[name]
                 else:
                     self.__dict__[name] = False # TODO: I prefer None here...
@@ -511,7 +516,7 @@ class Data(object):
 
     def __setattr__(self, field, value):
         if 'fields' in self.__dict__:
-            if field in self.fields.keys():
+            if field in self.fields:
                 ttype = self.fields[field]['ttype']
                 if ttype =='many2one' and value:
                     self.INSTANCES['%s:%s' % (self._model, value._ref)] = value
@@ -522,14 +527,14 @@ class Data(object):
         #if self.fields[self._model].has_key(field):
         #    ttype = self.fields[self._model][field]['ttype']
         #    if ttype in ('many2one', 'many2many'):
-        #        print "FIELD MANY2..."
-        if field in self.__dict__.keys():
+        #        print("FIELD MANY2...")
+        if field in self.__dict__:
             return self.__dict__[field]
         
         try:
             data = {field: self.__data[field]}
         except:
-            if field in self.fields.keys():
+            if field in self.fields:
                 data = self._ooop.read(self._model, self._ref, [field])
             else:
                 # Try a custom function
@@ -543,7 +548,7 @@ class Data(object):
             if data[name]: # TODO: review this
                 self.__dict__['__%s' % name] = data[name]
                 key = '%s:%i' % (relation, data[name][0])
-                if key in self.INSTANCES.keys():
+                if key in self.INSTANCES:
                     self.__dict__[name] = self.INSTANCES[key]
                 else:
                     # TODO: use a Manager instance, not Data
@@ -558,23 +563,23 @@ class Data(object):
                 self.__dict__['__%s' % name] = data[name]
                 self.__dict__[name] = List(Manager(relation, self._ooop),
                                            data=self, model=relation)
-                for i in xrange(len(data[name])):
-                    key = '%s:%i' % (relation, data[name][i])
-                    if key in self.INSTANCES.keys():
-                        self.__dict__[name].append(self.INSTANCES['%s:%s' % (relation, data[name][i])])
+                for id in data[name]:
+                    key = '%s:%i' % (relation, id)
+                    if key in self.INSTANCES:
+                        self.__dict__[name].append(self.INSTANCES['%s:%s' % (relation, id)])
                     else:
                         # TODO: use a Manager instance, not Data
                         instance = Data(Manager(relation, self._ooop),
-                                        data[name][i], data=self,
+                                        id, data=self,
                                         model=relation)
                         self.__dict__[name].append(instance)
-                        #self.INSTANCES['%s:%s' % (relation, data[name][i])] = instance
+                        #self.INSTANCES['%s:%s' % (relation, id)] = instance
             else:
                 self.__dict__[name] = List(Manager(relation, self._ooop),
                                            data=self, model=relation)
         else:
             # axelor conector workaround
-            if type(data) == types.ListType:
+            if type(data) == list:
                 data = data[0]
                 
             self.__dict__[name] = data[name]
@@ -588,7 +593,7 @@ class Data(object):
         data = {}
         for i in self.fields.values():
             name,ttype,relation = i['name'],i['ttype'],i['relation']
-            if name in self.__dict__.keys(): # else keep values in original object
+            if name in self.__dict__: # else keep values in original object
                 if not '2' in ttype:
                     data[name] = self.__dict__[name]
                 elif ttype in ('one2many', 'many2many'):
@@ -608,7 +613,7 @@ class Data(object):
                         data[name] = self.__dict__[name]
 
         if self._ooop.debug:
-            print ">>> data: ", data
+            print(">>> data: {}".format(data))
 
         # create or write the object
         if self._ref > 0 and not self._copy: # same object
