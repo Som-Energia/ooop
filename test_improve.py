@@ -1,3 +1,5 @@
+from __future__ import print_function
+from builtins import range
 from ooop import OOOP
 from datetime import datetime, timedelta
 
@@ -16,7 +18,7 @@ start_a = datetime.now()
 x = o.OptimaReturnsQrenta.all()
 for i in range(100):
     data = x[i] 
-    print data.account.customers[0].customer_id.agent.name
+    print(data.account.customers[0].customer_id.agent.name)
 stop_a = datetime.now() -start_a
 
 # start_b = datetime.now()
@@ -24,7 +26,7 @@ stop_a = datetime.now() -start_a
 # print x
 # stop_b = datetime.now() -start_b
 # 
-print "a:", stop_a
+print("a:", stop_a)
 # print "b:", stop_b
 
 

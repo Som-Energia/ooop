@@ -1,6 +1,9 @@
 import unittest
 import fudge
-import xmlrpclib
+try:
+    import xmlrpclib
+except ImportError:
+    from xmlrpc import client as xmlrpclib
 from ooop import OOOP
 
 RESPONSE_IRMODEL = [
@@ -51,8 +54,8 @@ class TestOOOP(unittest.TestCase):
     @fudge.with_fakes
     def test_ooop_instance(self):
         n = OOOP(dbname='test')
-        self.assertEquals(n.__dict__.has_key('ResPartner'), True)
-        self.assertEquals(n.__dict__.has_key('ResPartnerAddress'), True)
+        self.assertEquals('ResPartner' in n.__dict__, True)
+        self.assertEquals('ResPartnerAddress' in n.__dict__, True)
 
             
 class TestManager(unittest.TestCase):
