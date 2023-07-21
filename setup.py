@@ -27,7 +27,7 @@ setup(
     #package_dir = {'ooop': 'src/'},
     #packages = ['ooop'],
     install_requires = [
-        'futurize',
+        'future',
     ],
     classifiers = [
         'Development Status :: 4 - Beta',
